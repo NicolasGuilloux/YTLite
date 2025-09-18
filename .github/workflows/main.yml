@@ -98,6 +98,14 @@ jobs:
             exit 1
           fi
 
+      - name: Extract Bundle version
+        run: |
+          mkdir -p ${{ github.workspace }}/youtube_extracted
+          unzip -q ${{ github.workspace }}/youtube.ipa -d ${{ github.workspace }}/youtube_extracted
+          BUNDLE_VERSION=$(plutil -extract CFBundleShortVersionString raw ${{ github.workspace }}/youtube_extracted/Payload/YouTube.app/Info.plist)
+          echo "BUNDLE_VERSION=$(echo $BUNDLE_VERSION)" >> $GITHUB_ENV
+          echo "Bundle version: $BUNDLE_VERSION"
+
       - name: Install Dependencies
         run: brew install make ldid
 
@@ -305,14 +313,14 @@ jobs:
             fi
           done
 
-          cyan -i youtube.ipa -o YouTubePlus_${{ inputs.tweak_version }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
+          cyan -i youtube.ipa -o YouTubePlus_${{ inputs.tweak_version }}_${{ env.BUNDLE_VERSION }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2.0.1
         with:
           tag_name: ytp-${{ github.run_number }}
-          name: YouTubePlus v${{ inputs.tweak_version }} (${{ github.run_number }})
-          files: YouTubePlus_${{ inputs.tweak_version }}.ipa
+          name: YouTubePlus v${{ env.BUNDLE_VERSION }} ${{ inputs.tweak_version }} (${{ github.run_number }})
+          files: YouTubePlus_${{ inputs.tweak_version }}_${{ env.BUNDLE_VERSION }}.ipa
           draft: true
 
       - name: Output Release URL
